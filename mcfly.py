@@ -303,56 +303,43 @@ class Lexer:
       else:
         return Token(TokenType.NE)
 
+  def letterless_token(self, error_words: str, token_type: TokenType):
+    if self.current_char in LETTERS:
+      return Token(TokenType.ERROR_WORDS, self.show_error_words(error_words))
+    return Token(token_type)
+
   def generate_a_keywords(self):
     found_word = self.advance_words('nd', 'vg')
     if found_word == 'nd':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('and'))
-      return Token(TokenType.AND_BOOLEAN)
+      return self.letterless_token('and', TokenType.AND_BOOLEAN)
     elif found_word == 'vg':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('avg'))
-      return Token(TokenType.AVERAGE)
+      return self.letterless_token('avg', TokenType.AVERAGE)
     return Token(TokenType.ERROR_WORDS, self.show_error_words('a'))
 
   def generate_o_keywords(self):
     found_word = self.advance_words('r', 'dd?')
     if found_word == 'r':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('or'))
-      return Token(TokenType.OR_BOOLEAN)
+      return self.letterless_token('or', TokenType.OR_BOOLEAN)
     elif found_word == 'dd?':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('odd?'))
-      return Token(TokenType.ODD_CHECK)    
+      return self.letterless_token('odd?', TokenType.ODD_CHECK)
     return Token(TokenType.ERROR_WORDS, self.show_error_words('o'))
 
   def generate_xor_boolean(self):
     if self.advance_word('or'):
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('xor'))
-      return Token(TokenType.XOR_BOOLEAN)
+      return self.letterless_token('xor', TokenType.XOR_BOOLEAN)
     return Token(TokenType.ERROR_WORDS, self.show_error_words('x'))
 
   def generate_n_boolean(self):
     found_word = self.advance_words('ot', 'or', 'and', 'um?')
 
     if found_word == 'ot':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('not'))
-      return Token(TokenType.NOT_BOOLEAN)
+      return self.letterless_token('not', TokenType.NOT_BOOLEAN)
     elif found_word == 'or':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('nor'))
-      return Token(TokenType.NOR_BOOLEAN)
+      return self.letterless_token('nor', TokenType.NOR_BOOLEAN)
     elif found_word == 'and':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('nand'))
-      return Token(TokenType.NAND_BOOLEAN)
+      return self.letterless_token('nand', TokenType.NAND_BOOLEAN)
     elif found_word == 'um?':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('num?'))
-      return Token(TokenType.NUMBER_TYPE)
+      return self.letterless_token('num?', TokenType.NUMBER_TYPE)
     return Token(TokenType.ERROR_WORDS, self.show_error_words('n'))
 
   def generate_true(self):
@@ -370,13 +357,9 @@ class Lexer:
     if found_word == 'un':
       return Token(TokenType.FUNCTION)
     elif found_word == 'loat?':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('Float?'))
-      return Token(TokenType.FLOAT_TYPE)
+      return self.letterless_token('Float?', TokenType.FLOAT_TYPE)
     elif found_word == 'loor':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('floor'))
-      return Token(TokenType.FLOOR)
+      return self.letterless_token('floor', TokenType.FLOOR)
     return Token(TokenType.ERROR_WORDS, self.show_error_words('f'))
 
   def generate_i_keywords(self):
@@ -384,9 +367,7 @@ class Lexer:
     if found_word == 'f':
       return Token(TokenType.CONDITIONAL)
     elif found_word == 'nt?':
-      if self.current_char in LETTERS:
-        return Token(TokenType.ERROR_WORDS, self.show_error_words('int?'))
-      return Token(TokenType.INTEGER_TYPE)
+      return self.letterless_token('int?', TokenType.INTEGER_TYPE)
     return Token(TokenType.ERROR_WORDS, self.show_error_words('i'))
 
   def generate_s_keywords(self):
@@ -402,16 +383,12 @@ class Lexer:
   def generate_even(self):
     if not self.advance_word('ven?'):
       return Token(TokenType.ERROR_WORDS, self.show_error_words('e'))
-    if self.current_char in LETTERS:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('even?'))
-    return Token(TokenType.EVEN_CHECK)
+    return self.letterless_token('even?', TokenType.EVEN_CHECK)
 
   def generate_ceil(self):
     if not self.advance_word('eil'):
       return Token(TokenType.ERROR_WORDS, self.show_error_words('c'))
-    if self.current_char in LETTERS:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('ceil'))
-    return Token(TokenType.CEIL)
+    return self.letterless_token('ceil', TokenType.CEIL)
 
   def generate_error_words(self):
     return Token(TokenType.ERROR_WORDS, self.show_error_words(''))
