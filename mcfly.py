@@ -1,6 +1,7 @@
 from enum import Enum
 import string
 from dataclasses import dataclass, field, replace
+from typing import List
 
 # Important Characters #
 
@@ -103,6 +104,35 @@ class Lexer:
   def lastCharCheckAdvance(self, char):
     if self.current_char == char:
       self.advance()
+
+  def advance_word(self, word: str):
+    for char in word:
+      self.advance()
+
+      if self.current_char != char:
+        return False
+
+    self.lastCharCheckAdvance(word[-1])
+    return True
+
+  def advance_words(self, *words: str):
+    words: List[str] = sorted(words, key = lambda word: len(word), reverse=True)
+    i = 0
+    while words:
+      self.advance()
+
+      keeping: List[str] = []
+      for word in words:
+        if self.current_char == word[i]:
+          if i == len(word) - 1:
+            self.lastCharCheckAdvance(word[i])
+            return word
+          keeping.append(word)
+
+      if not keeping:
+        return False
+      words = keeping
+      i += 1
 
   def generate_tokens(self):
     while self.current_char != None:
@@ -274,201 +304,114 @@ class Lexer:
         return Token(TokenType.NE)
 
   def generate_a_keywords(self):
-    self.advance()
-    if self.current_char == 'n':
-      self.advance()
-      self.lastCharCheckAdvance('d')
+    found_word = self.advance_words('nd', 'vg')
+    if found_word == 'nd':
       if self.current_char in LETTERS:
         return Token(TokenType.ERROR_WORDS, self.show_error_words('and'))
       return Token(TokenType.AND_BOOLEAN)
-    elif self.current_char == 'v':
-      self.advance()
-      self.lastCharCheckAdvance('g')
+    elif found_word == 'vg':
       if self.current_char in LETTERS:
         return Token(TokenType.ERROR_WORDS, self.show_error_words('avg'))
       return Token(TokenType.AVERAGE)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('a'))
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('a'))
 
   def generate_o_keywords(self):
-    self.advance()
-    if self.current_char == 'r':
-      self.advance()
+    found_word = self.advance_words('r', 'dd?')
+    if found_word == 'r':
       if self.current_char in LETTERS:
         return Token(TokenType.ERROR_WORDS, self.show_error_words('or'))
       return Token(TokenType.OR_BOOLEAN)
-    elif self.current_char == 'd':
-      self.advance()
-      if self.current_char == 'd':
-        self.advance()
-        self.lastCharCheckAdvance('?')
-        if self.current_char in LETTERS:
-          return Token(TokenType.ERROR_WORDS, self.show_error_words('odd?'))
-        return Token(TokenType.ODD_CHECK)    
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('o'))
+    elif found_word == 'dd?':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('odd?'))
+      return Token(TokenType.ODD_CHECK)    
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('o'))
 
   def generate_xor_boolean(self):
-    self.advance()
-    if self.current_char == 'o':
-      self.advance()
-      self.lastCharCheckAdvance('r')
+    if self.advance_word('or'):
       if self.current_char in LETTERS:
         return Token(TokenType.ERROR_WORDS, self.show_error_words('xor'))
       return Token(TokenType.XOR_BOOLEAN)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('x'))
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('x'))
 
   def generate_n_boolean(self):
-    self.advance()
-    if self.current_char == 'o':
-      self.advance()
-      if self.current_char == 't':
-        self.advance()
-        if self.current_char in LETTERS:
-          return Token(TokenType.ERROR_WORDS, self.show_error_words('not'))
-        return Token(TokenType.NOT_BOOLEAN)
-      elif self.current_char == 'r':
-        self.advance()  
-        if self.current_char in LETTERS:
-          return Token(TokenType.ERROR_WORDS, self.show_error_words('nor'))
-        return Token(TokenType.NOR_BOOLEAN)    
-    elif self.current_char == 'a':
-      self.advance()
-      if self.current_char == 'n':
-        self.advance()
-        self.lastCharCheckAdvance('d')
-        if self.current_char in LETTERS:
-          return Token(TokenType.ERROR_WORDS, self.show_error_words('nand'))
-        return Token(TokenType.NAND_BOOLEAN)
-    elif self.current_char == 'u':
-      self.advance()
-      if self.current_char == 'm':
-        self.advance()
-        self.lastCharCheckAdvance('?')
-        if self.current_char in LETTERS:
-          return Token(TokenType.ERROR_WORDS, self.show_error_words('num?'))
-        return Token(TokenType.NUMBER_TYPE)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('n'))
+    found_word = self.advance_words('ot', 'or', 'and', 'um?')
+
+    if found_word == 'ot':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('not'))
+      return Token(TokenType.NOT_BOOLEAN)
+    elif found_word == 'or':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('nor'))
+      return Token(TokenType.NOR_BOOLEAN)
+    elif found_word == 'and':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('nand'))
+      return Token(TokenType.NAND_BOOLEAN)
+    elif found_word == 'um?':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('num?'))
+      return Token(TokenType.NUMBER_TYPE)
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('n'))
 
   def generate_true(self):
-    self.advance()
-    if self.current_char == 'r':
-      self.advance()
-      if self.current_char == 'u':
-        self.advance()
-        self.lastCharCheckAdvance('e')
-        return Token(TokenType.TRUE)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('T'))
+    if self.advance_word('rue'):
+      return Token(TokenType.TRUE)
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('T'))
 
   def generate_false(self):
-    self.advance()
-    if self.current_char == 'a':
-      self.advance()
-      if self.current_char == 'l':
-        self.advance()
-        if self.current_char == 's':
-          self.advance()
-          self.lastCharCheckAdvance('e')
-          return Token(TokenType.FALSE)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('F'))
+    if self.advance_word('alse'):
+      return Token(TokenType.FALSE)
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('F'))
 
   def generate_f_keywords(self):
-    self.advance()
-    if self.current_char == 'u':
-      self.advance()
-      if self.current_char == 'n':
-        self.advance()
+    found_word = self.advance_words('un', 'loat?', 'loor')
+    if found_word == 'un':
       return Token(TokenType.FUNCTION)
-    elif self.current_char == 'l':
-      self.advance()
-      if self.current_char == 'o':
-        self.advance()
-        if self.current_char == 'a':
-          self.advance()
-          if self.current_char == 't':
-            self.advance()
-            self.lastCharCheckAdvance('?')
-            if self.current_char in LETTERS:
-              return Token(TokenType.ERROR_WORDS, self.show_error_words('Float?'))
-            return Token(TokenType.FLOAT_TYPE)
-        elif self.current_char == 'o':
-          self.advance()
-          self.lastCharCheckAdvance('r')
-          if self.current_char in LETTERS:
-            return Token(TokenType.ERROR_WORDS, self.show_error_words('floor'))
-          return Token(TokenType.FLOOR)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('f'))
+    elif found_word == 'loat?':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('Float?'))
+      return Token(TokenType.FLOAT_TYPE)
+    elif found_word == 'loor':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('floor'))
+      return Token(TokenType.FLOOR)
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('f'))
 
   def generate_i_keywords(self):
-    self.advance()
-    if self.current_char == 'f':
-      self.advance()
+    found_word = self.advance_words('f', 'nt?')
+    if found_word == 'f':
       return Token(TokenType.CONDITIONAL)
-    elif self.current_char == 'n':
-      self.advance()
-      if self.current_char == 't':
-        self.advance()
-        self.lastCharCheckAdvance('?')
-        if self.current_char in LETTERS:
-          return Token(TokenType.ERROR_WORDS, self.show_error_words('int?'))
-        return Token(TokenType.INTEGER_TYPE)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('i'))
+    elif found_word == 'nt?':
+      if self.current_char in LETTERS:
+        return Token(TokenType.ERROR_WORDS, self.show_error_words('int?'))
+      return Token(TokenType.INTEGER_TYPE)
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('i'))
 
   def generate_s_keywords(self):
-    self.advance()
-    if self.current_char == 'u':
-      self.advance()
-      self.lastCharCheckAdvance('m')
+    found_word = self.advance_words('um', 'qrt', 'tr?')
+    if found_word == 'um':
       return Token(TokenType.SUM)
-    elif self.current_char == 'q':
-      self.advance()
-      if self.current_char == 'r':        
-        self.advance()
-        self.lastCharCheckAdvance('t')
-        return Token(TokenType.SQUARE_ROOT)
-      return Token(TokenType.SQUARE)
-    elif self.current_char == 't':
-      self.advance()
-      if self.current_char == 'r':
-        self.advance()
-        self.lastCharCheckAdvance('?')
-        return Token(TokenType.STRING_TYPE)    
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('s'))
+    elif found_word == 'qrt':
+      return Token(TokenType.SQUARE_ROOT)
+    elif found_word == 'tr?':
+      return Token(TokenType.STRING_TYPE)
+    return Token(TokenType.ERROR_WORDS, self.show_error_words('s'))
 
   def generate_even(self):
-    self.advance()
-    if self.current_char == 'v':
-      self.advance()
-      if self.current_char == 'e':
-        self.advance()
-        if self.current_char == 'n':
-          self.advance()
-          self.lastCharCheckAdvance('?')
-          if self.current_char in LETTERS:
-            return Token(TokenType.ERROR_WORDS, self.show_error_words('even?'))
-          return Token(TokenType.EVEN_CHECK)
-    else:
+    if not self.advance_word('ven?'):
       return Token(TokenType.ERROR_WORDS, self.show_error_words('e'))
+    if self.current_char in LETTERS:
+      return Token(TokenType.ERROR_WORDS, self.show_error_words('even?'))
+    return Token(TokenType.EVEN_CHECK)
 
   def generate_ceil(self):
-    self.advance()
-    if self.current_char == 'e':
-      self.advance()
-      if self.current_char == 'i':
-        self.advance()
-        self.lastCharCheckAdvance('l')
-        if self.current_char in LETTERS:
-          return Token(TokenType.ERROR_WORDS, self.show_error_words('ceil'))
-        return Token(TokenType.CEIL)
-    else:
-      return Token(TokenType.ERROR_WORDS, self.show_error_words('c'))  
+    if not self.advance_word('eil'):
+      return Token(TokenType.ERROR_WORDS, self.show_error_words('c'))
+    if self.current_char in LETTERS:
+      return Token(TokenType.ERROR_WORDS, self.show_error_words('ceil'))
+    return Token(TokenType.CEIL)
 
   def generate_error_words(self):
     return Token(TokenType.ERROR_WORDS, self.show_error_words(''))
